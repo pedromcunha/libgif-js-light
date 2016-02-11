@@ -1,0 +1,16 @@
+{
+  "name": "libgif-js-light",
+  "homepage": "https://github.com/pedromcunha/libgif-js-light",
+  "version": "1.0",
+  "authors": [
+    "pedromcunha <pedro.spinsomewebs@gmail.com>"
+  ],
+  "description": "A lightweight version of Buzzfeed's JavaScript GIF parser and player",
+  "main": "libgif.js",
+  "moduleType": [],
+  "keywords": [
+    "gif",
+    "js"
+  ],
+  "license": "MIT"
+}
