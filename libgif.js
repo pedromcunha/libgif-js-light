@@ -62,6 +62,7 @@
 			http://humpy77.deviantart.com/journal/Frame-Delay-Times-for-Animated-GIFs-214150546
 
 */
+
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
         define([], factory);
@@ -463,10 +464,6 @@
         var loopDelay = (options.hasOwnProperty('loop_delay') ? options.loop_delay : 0);
         var overrideLoopMode = (options.hasOwnProperty('loop_mode') ? options.loop_mode : 'auto');
         var drawWhileLoading = (options.hasOwnProperty('draw_while_loading') ? options.draw_while_loading : true);
-        var showProgressBar = drawWhileLoading ? (options.hasOwnProperty('show_progress_bar') ? options.show_progress_bar : true) : false;
-        var progressBarHeight = (options.hasOwnProperty('progressbar_height') ? options.progressbar_height : 25);
-        var progressBarBackgroundColor = (options.hasOwnProperty('progressbar_background_color') ? options.progressbar_background_color : 'rgba(255,255,255,0.4)');
-        var progressBarForegroundColor = (options.hasOwnProperty('progressbar_foreground_color') ? options.progressbar_foreground_color : 'rgba(255,0,22,.8)');
 
         var clear = function () {
             transparency = null;
@@ -482,9 +479,7 @@
             try {
                 parseGIF(stream, handler);
             }
-            catch (err) {
-                doLoadError('parse');
-            }
+            catch (err) {}
         };
 
         var doText = function (text) {
@@ -518,7 +513,7 @@
         };
 
         var doShowProgress = function (pos, length, draw) {
-            if (draw && showProgressBar) {
+            if (draw) {
                 var height = progressBarHeight;
                 var left, mid, top, width;
                 if (options.is_vp) {
@@ -535,18 +530,6 @@
                         mid = left + (pos / length) * (options.vp_w / get_canvas_scale());
                         width = canvas.width / get_canvas_scale();
                     }
-                    //some debugging, draw rect around viewport
-                    if (false) {
-                        if (!ctx_scaled) {
-                            var l = options.vp_l, t = options.vp_t;
-                            var w = options.vp_w, h = options.vp_h;
-                        } else {
-                            var l = options.vp_l/get_canvas_scale(), t = options.vp_t/get_canvas_scale();
-                            var w = options.vp_w/get_canvas_scale(), h = options.vp_h/get_canvas_scale();
-                        }
-                        ctx.rect(l,t,w,h);
-                        ctx.stroke();
-                    }
                 }
                 else {
                     top = (canvas.height - height) / (ctx_scaled ? get_canvas_scale() : 1);
@@ -561,28 +544,6 @@
                 ctx.fillStyle = progressBarForegroundColor;
                 ctx.fillRect(0, top, mid, height);
             }
-        };
-
-        var doLoadError = function (originOfError) {
-            var drawError = function () {
-                ctx.fillStyle = 'black';
-                ctx.fillRect(0, 0, options.c_w ? options.c_w : hdr.width, options.c_h ? options.c_h : hdr.height);
-                ctx.strokeStyle = 'red';
-                ctx.lineWidth = 3;
-                ctx.moveTo(0, 0);
-                ctx.lineTo(options.c_w ? options.c_w : hdr.width, options.c_h ? options.c_h : hdr.height);
-                ctx.moveTo(0, options.c_h ? options.c_h : hdr.height);
-                ctx.lineTo(options.c_w ? options.c_w : hdr.width, 0);
-                ctx.stroke();
-            };
-
-            loadError = originOfError;
-            hdr = {
-                width: gif.width,
-                height: gif.height
-            }; // Fake header.
-            frames = [];
-            drawError();
         };
 
         var doHdr = function (_hdr) {
@@ -680,11 +641,6 @@
 
             // We could use the on-page canvas directly, except that we draw a progress
             // bar for each image chunk (not just the final image).
-            if (drawWhileLoading) {
-                ctx.drawImage(tmpCanvas, 0, 0);
-                drawWhileLoading = options.auto_play;
-            }
-
             lastImg = img;
         };
 
@@ -807,9 +763,7 @@
             }
         }());
 
-        var doDecodeProgress = function (draw) {
-            doShowProgress(stream.pos, stream.data.length, draw);
-        };
+        var doDecodeProgress = function (draw) {};
 
         var doNothing = function () {};
         /**
@@ -854,12 +808,14 @@
 
         var init = function () {
             var parent = gif.parentNode;
-
             var div = document.createElement('div');
-            canvas = document.createElement('canvas');
+            if(options.canvas) {
+                canvas = options.canvas;
+            } else {
+                canvas = document.createElement('canvas');
+            }
             ctx = canvas.getContext('2d');
             toolbar = document.createElement('div');
-
             tmpCanvas = document.createElement('canvas');
 
             div.width = canvas.width = gif.width;
@@ -953,7 +909,7 @@
                 };
                 h.onload = function(e) {
                     if (this.status != 200) {
-                        doLoadError('xhr - response');
+                        throw Error('Gif failed to load with a '+ this.status);
                     }
                     // emulating response field for IE9
                     if (!('response' in this)) {
@@ -967,10 +923,9 @@
                     stream = new Stream(data);
                     setTimeout(doParse, 0);
                 };
-                h.onprogress = function (e) {
-                    if (e.lengthComputable) doShowProgress(e.loaded, e.total, true);
+                h.onerror = function() {
+                    throw Error('Gif failed to load');
                 };
-                h.onerror = function() { doLoadError('xhr'); };
                 h.send();
             },
             load: function (callback) {
