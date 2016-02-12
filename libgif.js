@@ -498,15 +498,13 @@
                     if (disposalRestoreFromIdx !== null) {
                     	frame.putImageData(frames[disposalRestoreFromIdx].data, 0, 0);
                     } else {
-                        if(!options.canvas) {
-                        	frame.clearRect(lastImg.leftPos, lastImg.topPos, lastImg.width, lastImg.height);
-                        }
+                        frame.clearRect(lastImg.leftPos, lastImg.topPos, lastImg.width, lastImg.height);
                     }
                 } else {
                     disposalRestoreFromIdx = currIdx - 1;
                 }
 
-                if (lastDisposalMethod === 2 && !options.canvas) {
+                if (lastDisposalMethod === 2) {
                     // Restore to background color
                     // Browser implementations historically restore to transparent; we do the same.
                     // http://www.wizards-toolkit.org/discourse-server/viewtopic.php?f=1&t=21172#p86079
@@ -617,8 +615,8 @@
                 offset = frameOffsets[i];
 
                 tmpCanvas.getContext("2d").putImageData(frames[i].data, offset.x, offset.y);
-                ctx.globalCompositeOperation = "copy";
                 if(!options.drawImageWith) {
+                    ctx.globalCompositeOperation = "copy";
                     ctx.drawImage(tmpCanvas, 0, 0);
                 } else {
                     var placement = options.drawImageWith;
